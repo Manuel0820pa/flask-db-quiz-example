@@ -3,6 +3,40 @@
 
 This repository includes a small Python Flask web site, made for demonstration purposes only.
 
+## Arquitectura
+
+### Arquitectura previa (legada)
+
+El repositorio base (`pamelafox/flask-db-quiz-example`) ya venía organizado con Blueprints,
+pero con dos puntos débiles frente a un entorno productivo real:
+
+- **Modelos y rutas mezclados**: `flaskapp/quizzes.py` contenía en un solo archivo tanto las
+  clases del ORM (`Quiz`, `Question`, `QuizScore`) como las rutas HTTP del Blueprint.
+- **Configuración fragmentada y acoplada a Azure**: la configuración vivía en
+  `flaskapp/config/development.py` y `flaskapp/config/production.py`, y la versión de
+  producción dependía directamente de `azure.identity` para autenticarse contra la base de
+  datos, lo que hacía imposible desplegar en otro proveedor sin reescribir esa lógica.
+- **Sin contenedorización**: no existía `Dockerfile` ni `.dockerignore`; el único camino de
+  despliegue documentado era Azure App Service vía `azd`.
+- **Sin endpoint de salud**: no había forma estándar de monitorear si el servicio estaba vivo.
+
+### Arquitectura nueva
+
+- **`flaskapp/models.py`**: contiene únicamente los modelos de datos (`Quiz`, `Question`,
+  `QuizScore`), separados de la capa de rutas.
+- **`flaskapp/quizzes.py`**: contiene únicamente el Blueprint y las rutas HTTP, que ahora
+  importan los modelos desde `models.py`.
+- **`flaskapp/config.py`**: configuración centralizada en un solo archivo con clases
+  (`BaseConfig`, `DevelopmentConfig`, `ProductionConfig`) en vez de módulos sueltos por
+  entorno. `ProductionConfig` ahora prioriza la variable estándar `DATABASE_URL` (usada por
+  Railway, Render, Heroku, etc.), y solo cae a la autenticación específica de Azure si
+  detecta ese entorno — el proyecto deja de estar acoplado a un solo proveedor cloud.
+- **`Dockerfile` (multi-stage, `python:3.12-slim`) y `.dockerignore`**: la app corre en un
+  contenedor aislado con usuario no-root, con una etapa de build separada para mantener la
+  imagen final ligera.
+- **`GET /api/health`**: endpoint de diagnóstico que responde `{"status": "ok"}` para
+  monitoreo en producción.
+
 ## Opening the project
 
 This project has [Dev Container support](https://code.visualstudio.com/docs/devcontainers/containers), so it will be be setup automatically if you open it in Github Codespaces or in local VS Code with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
@@ -43,12 +77,23 @@ python3 -m flask seed
 4. Run the server:
 
 ```console
-python3 -m flask --debug run --port 50505
+flask --app src/app run
 ```
 
-5. Click 'http://127.0.0.1:50505' in the terminal, which should open the website in a new tab.
+5. Click 'http://127.0.0.1:5000' in the terminal, which should open the website in a new tab.
 6. Open the quiz linked from the index page.
 7. Answer the quiz and submit, notice the high scores update below.
+
+## Running with Docker
+
+You can also build and run the app in a container instead of a local virtualenv:
+
+```console
+docker build -t flask-quiz .
+docker run -p 8000:8000 -e DBHOST=host.docker.internal -e DBNAME=app -e DBUSER=app_user -e DBPASS=app_password flask-quiz
+```
+
+Then visit `http://localhost:8000/api/health` to confirm the container is up and connected to the database.
 
 ## Tests
 
