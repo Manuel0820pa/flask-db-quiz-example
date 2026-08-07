@@ -1,5 +1,3 @@
-import os
-
 import click
 from flask import Flask
 from flask_migrate import Migrate
@@ -19,12 +17,10 @@ def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, static_folder="static")
 
-    # Load configuration for prod vs. dev
-    is_prod_env = "WEBSITE_HOSTNAME" in os.environ
-    if not is_prod_env:
-        app.config.from_object("flaskapp.config.development")
-    else:
-        app.config.from_object("flaskapp.config.production")  # pragma: no cover
+    # Load configuration for prod vs. dev (ver flaskapp/config.py)
+    from .config import get_config
+
+    app.config.from_object(get_config())
 
     # Configure the database
     app.config.update(SQLALCHEMY_DATABASE_URI=app.config.get("DATABASE_URI"), SQLALCHEMY_TRACK_MODIFICATIONS=False)
@@ -38,6 +34,10 @@ def create_app(test_config=None):
     from . import quizzes
 
     app.register_blueprint(quizzes.bp)
+
+    @app.route("/api/health")
+    def health():
+        return {"status": "ok"}, 200
 
     @app.cli.command("seed")
     def seed_data():
