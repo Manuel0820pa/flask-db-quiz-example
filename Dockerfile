@@ -40,4 +40,4 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "python -m flask db upgrade --directory flaskapp/migrations && python -m flask seed && python -m gunicorn --bind 0.0.0.0:8000 app:app"]
+CMD ["sh", "-c", "python -m flask db upgrade --directory flaskapp/migrations && python -m flask seed && python -m gunicorn app:app"]
