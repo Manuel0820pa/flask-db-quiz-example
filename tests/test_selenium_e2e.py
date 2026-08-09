@@ -1,15 +1,5 @@
-"""
-Pruebas End-to-End con Selenium (Fase 4 del proyecto de reingenieria).
 
-Simulan interacciones reales de un usuario en el navegador contra la
-aplicacion corriendo en un servidor real en un hilo de fondo (no usamos
-el live_server de pytest-flask porque su implementacion basada en
-multiprocessing con 'spawn' falla en Windows + Python 3.14 al no poder
-serializar (pickle) la funcion interna del servidor).
-
-Requiere Google Chrome instalado. Selenium 4.6+ descarga el chromedriver
-automaticamente (Selenium Manager), no hace falta instalarlo aparte.
-"""
+import os
 
 import threading
 
@@ -37,9 +27,13 @@ def live_server_url(app):
 @pytest.fixture()
 def driver():
     options = webdriver.ChromeOptions()
-    # Modo visual (sin --headless) a proposito: el PDF pide evidencia de
-    # ejecucion visual con las aserciones en verde.
     options.add_argument("--window-size=1280,900")
+    if os.environ.get("CI"):
+        # En GitHub Actions no hay pantalla; localmente se corre en modo
+        # visual a proposito (el PDF pide evidencia de ejecucion visual).
+        options.add_argument("--headless=new")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
     drv = webdriver.Chrome(options=options)
     drv.implicitly_wait(5)
     yield drv
