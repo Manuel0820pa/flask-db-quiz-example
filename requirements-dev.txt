@@ -10,3 +10,4 @@ playwright
 pytest-playwright
 pytest-flask
 pytest-axe-playwright-snapshot==0.0.6
+selenium==4.27.1
