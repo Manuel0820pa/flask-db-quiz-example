@@ -2,10 +2,11 @@
 {% block content %}
 <header>
   <h1>Quizzes</h1>
+  <p class="subtitle">Elige un quiz y pon a prueba lo que sabes</p>
 </header>
 
 <main>
-<ul>
+<ul class="quiz-list">
 {% for quiz in quizzes %}
   <li><a href="/quizzes/{{ quiz.id }}">{{ quiz.title }}</a>
 {% endfor %}

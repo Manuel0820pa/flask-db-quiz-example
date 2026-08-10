@@ -4,10 +4,12 @@
 
 <form id="quiz-form" hx-post="/quizzes/{{ quiz.id}}/scores" hx-target="#score">
 
+  <div class="name-field">
   <label>
     Your name:
     <input id="player" name="player" type="text">
   </label>
+  </div>
 
   <p>Please answer these {{ questions|length }} questions:
   </p>
